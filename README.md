@@ -8,10 +8,10 @@
 
 ### 通过安装包使用
 
-当前可分发 `gpt-image-mcp-0.1.0.tgz`，尚未发布到公共 npm 注册表。收到安装包后，在文件所在目录执行：
+当前可分发 `gpt-image-mcp-0.2.0.tgz`，尚未发布到公共 npm 注册表。收到安装包后，在文件所在目录执行：
 
 ```sh
-npm install --global ./gpt-image-mcp-0.1.0.tgz
+npm install --global ./gpt-image-mcp-0.2.0.tgz
 gpt-image-mcp --help
 ```
 
@@ -49,7 +49,7 @@ Windows 上 npm 会生成 `.cmd` 启动器，客户端如果无法直接启动�
 也可以通过本地压缩包临时运行，无需全局安装（替换为安装包实际路径）：
 
 ```sh
-npx --yes --package="/安装包绝对路径/gpt-image-mcp-0.1.0.tgz" gpt-image-mcp --help
+npx --yes --package="/安装包绝对路径/gpt-image-mcp-0.2.0.tgz" gpt-image-mcp --help
 ```
 
 ### 从源码运行
@@ -107,7 +107,7 @@ Windows 示例，JSON 中使用正斜杠可避免反斜杠转义：
 | `IMAGE_GEN_MODEL` | `gpt-image-2.5-sunburst` | 文生图和编辑共用的模型，允许兼容服务商的模型别名，需账号有权限 |
 | `IMAGE_GEN_OUTPUT_DIR` | 用户主目录下的 `gpt-image-mcp/images` | 输出根目录，支持本机绝对路径或 `~/`；自动按本地日期创建 `yyyy/MM/dd` 子目录 |
 | `IMAGE_GEN_TIMEOUT_MS` | `300000` | API 请求超时，单位毫秒，必须为不小于 1000 的整数 |
-| `IMAGE_GEN_RESPONSE_FORMAT` | `b64_json` | API 返回图片的方式：`b64_json`（返回 Base64 数据）或 `url`（返回下载地址，服务自动下载保存）。部分中转站默认返回 `url`，需对应配置 |
+| `IMAGE_GEN_RESPONSE_FORMAT` | `b64_json` | API 返回图片的方式：`b64_json`（返回 Base64 数据）或 `url`（返回下载地址，服务自动下载保存）。默认 `b64_json` 时不向 API 发送此参数，仅配置 `url` 时才显式发送。部分代理对新模型（如 `gpt-image-2.5-sunburst`）可能不支持此参数，遇到 `unknown_parameter` 错误时请保持默认值 |
 
 `.env.example` 仅作为变量示例，服务不会自动读取 `.env`。本地调试可运行 `node --env-file=.env dist/index.js`，或通过 MCP 客户端的 `env` 传入变量。
 
@@ -126,7 +126,7 @@ Windows 示例，JSON 中使用正斜杠可避免反斜杠转义：
 
 Key、提示词和输入图片会发送到你配置的服务商。服务不会跟随 HTTP 重定向，请直接填写最终 API 根地址。
 
-兼容服务商必须支持 OpenAI Image API 的 JSON 文生图、multipart 图片编辑，以及 `data[].b64_json` 或 `data[].url` 返回结构（通过 `IMAGE_GEN_RESPONSE_FORMAT` 选择）。仅兼容聊天接口或异步任务 ID 的服务不在当前兼容范围内。
+兼容服务商必须支持 OpenAI Image API 的 JSON 文生图、multipart 图片编辑，以及 `data[].b64_json` 或 `data[].url` 返回结构。服务会自动识别两种返回格式并正确处理。部分代理对新模型不支持 `response_format` 参数，保持 `IMAGE_GEN_RESPONSE_FORMAT` 默认值即可正常使用。仅兼容聊天接口或异步任务 ID 的服务不在当前兼容范围内。
 
 ## 端点检查与实际能力验证
 
@@ -263,7 +263,7 @@ npm run check
 npm pack
 ```
 
-`npm pack` 会自动构建，生成 `gpt-image-mcp-0.1.0.tgz`。分发包仅包含编译结果、`package.json`、README 和 `.env.example`，不包含真实 `.env`、测试文件、源码或 `node_modules`。同一压缩包可发给三种系统的用户安装，安装时会选择对应平台依赖。
+`npm pack` 会自动构建，生成 `gpt-image-mcp-0.2.0.tgz`。分发包仅包含编译结果、`package.json`、README 和 `.env.example`，不包含真实 `.env`、测试文件、源码或 `node_modules`。同一压缩包可发给三种系统的用户安装，安装时会选择对应平台依赖。
 
 如以后发布到公共 npm，需要先确定自己有权使用的包名或作用域、发布账号和许可证。当前未执行 `npm publish`，不能假定注册表中的同名包属于本项目；现阶段请使用此项目生成的 `.tgz` 文件。
 

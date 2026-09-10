@@ -62,9 +62,9 @@ export class ImageService {
     const response = await this.client.images.generate({
       model: this.config.model, prompt: input.prompt, size: input.size,
       quality: input.quality, output_format: input.format, n: 1,
-      response_format: this.config.responseFormat,
       background: input.background,
       moderation: input.moderation,
+      ...(this.config.responseFormat === "url" && { response_format: "url" as const }),
       ...(input.output_compression != null && { output_compression: input.output_compression }),
     }, { signal });
     return this.persist(response, input.format, signal);
@@ -100,9 +100,9 @@ export class ImageService {
     const response = await this.client.images.edit({
       model: this.config.model, prompt: input.prompt, size: input.size,
       quality: input.quality, output_format: input.format, n: 1,
-      response_format: this.config.responseFormat,
       background: input.background,
       image: images.map((image) => image.upload), mask: mask?.upload,
+      ...(this.config.responseFormat === "url" && { response_format: "url" as const }),
       ...(input.input_fidelity != null && { input_fidelity: input.input_fidelity }),
       ...(input.output_compression != null && { output_compression: input.output_compression }),
     }, { signal });

@@ -96,7 +96,7 @@ test("MCP 发现三个工具，文生图发送 JSON 并返回真实落盘路径"
     const request = JSON.parse(String(init?.body));
     assert.equal(request.prompt, "水獭在月光下画画");
     assert.equal(request.output_format, "png");
-    assert.equal(request.response_format, "b64_json");
+    assert.equal(request.response_format, undefined);
     assert.equal(request.background, "auto");
     assert.equal(request.moderation, "auto");
     assert.equal(request.n, 1);
