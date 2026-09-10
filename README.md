@@ -66,59 +66,6 @@ IMAGE_GEN_OUTPUT_DIR = "~/pictures"
 npx --yes --package="/安装包绝对路径/gpt-image-mcp-0.2.0.tgz" gpt-image-mcp --help
 ```
 
-### 从源码运行
-
-```sh
-npm ci
-npm run build
-```
-
-在 MCP 客户端配置中注册服务。通过 `node` 直接运行构建结果，启动位置不影响默认输出目录。
-
-macOS / Linux 示例（把项目路径改成实际绝对路径）：
-
-```json
-{
-  "mcpServers": {
-    "image-gen": {
-      "command": "node",
-      "args": ["/你的项目路径/gpt-image-mcp/dist/index.js"],
-      "env": {
-        "OPENAI_API_KEY": "你的 API 密钥"
-      }
-    }
-  }
-}
-```
-
-Windows 示例，JSON 中使用正斜杠可避免反斜杠转义：
-
-```json
-{
-  "mcpServers": {
-    "image-gen": {
-      "command": "node",
-      "args": ["C:/你的项目路径/gpt-image-mcp/dist/index.js"],
-      "env": {
-        "OPENAI_API_KEY": "你的 API 密钥",
-        "IMAGE_GEN_OUTPUT_DIR": "D:/pictures"
-      }
-    }
-  }
-}
-```
-
-OpenAI Codex 从源码运行时，在 `.codex/config.toml` 中配置：
-
-```toml
-[mcp_servers.image-gen]
-command = "/你的node路径/bin/node"
-args = ["/你的项目路径/gpt-image-mcp/dist/index.js"]
-
-[mcp_servers.image-gen.env]
-OPENAI_API_KEY = "你的 API 密钥"
-```
-
 如果客户端找不到 `node`，将 `command` 替换为本机 Node.js 可执行文件的绝对路径。工具执行超时建议设为至少 360 秒，具体配置字段由客户端决定；服务自身的 API 超时默认为 300 秒。
 
 服务启动后会等待 MCP 输入，直接在终端运行时没有欢迎输出属于正常行为。日志只写入 stderr，stdout 保留给 MCP 协议。
@@ -133,8 +80,6 @@ OPENAI_API_KEY = "你的 API 密钥"
 | `IMAGE_GEN_OUTPUT_DIR` | 用户主目录下的 `gpt-image-mcp/images` | 输出根目录，支持本机绝对路径或 `~/`；自动按本地日期创建 `yyyy/MM/dd` 子目录 |
 | `IMAGE_GEN_TIMEOUT_MS` | `300000` | API 请求超时，单位毫秒，必须为不小于 1000 的整数 |
 | `IMAGE_GEN_RESPONSE_FORMAT` | `b64_json` | API 返回图片的方式：`b64_json`（返回 Base64 数据）或 `url`（返回下载地址，服务自动下载保存）。默认 `b64_json` 时不向 API 发送此参数，仅配置 `url` 时才显式发送。部分代理对新模型（如 `gpt-image-2.5-sunburst`）可能不支持此参数，遇到 `unknown_parameter` 错误时请保持默认值 |
-
-`.env.example` 仅作为变量示例，服务不会自动读取 `.env`。本地调试可运行 `node --env-file=.env dist/index.js`，或通过 MCP 客户端的 `env` 传入变量。
 
 `OPENAI_BASE_URL` 填写 API 根地址；未配置、空字符串或纯空格均使用官方端点。只有地址不包含路径时自动补 `/v1`，已有路径则按用户配置保留，避免破坏代理前缀或其他版本。尾部斜杠会去除，不会重复追加 `/v1`。
 
@@ -159,12 +104,6 @@ Key、提示词和输入图片会发送到你配置的服务商。服务不会�
 
 ```sh
 gpt-image-mcp --check
-```
-
-从源码使用 `.env` 时：
-
-```sh
-node --env-file=.env dist/index.js --check
 ```
 
 诊断最多等待 30 秒，不自动重试，只请求 `GET /models`，不会调用图片生成或编辑接口。结果说明：
@@ -263,33 +202,4 @@ Windows: C:\Users\用户名\gpt-image-mcp\images\2026\09\10\cozy-otter-paints-mo
 
 失败返回 `isError: true` 和错误说明。服务关闭自动重试；超时或断线不代表上游没有执行，重新调用可能再次计费。图片生成成功但本地保存失败时会明确提示，不会重新调用生成接口。客户端取消会传递给 API 请求，但无法保证取消上游已开始的计费。
 
-## 开发与验证
-
-```sh
-npm run check
-npm run test:package
-```
-
-执行类型检查、测试及构建。测试通过真实 OpenAI SDK 的模拟 HTTP 响应，覆盖 MCP 工具发现与调用、文生图、多图编辑、自定义端点路由、诊断结果边界、遮罩校验、本地保存、中文及空格路径、并发命名、失败不重试。测试不需要真实密钥，也不消耗图片 API 额度。
-
-`test:package` 会在临时目录打包和安装，验证发布文件白名单、npm 命令入口和安装后的 MCP 握手；安装依赖时需要访问 npm 或具有完整本地缓存。
-
-GitHub Actions 配置了 Linux、macOS、Windows 和 Node.js 22/24 的检查矩阵。配置存在不代表已在全部系统实际跑过；本地测试不能代替目标系统 CI 或真实 API 验收。
-
 真实验收建议用 `quality: "low"` 各执行一次文生图和图生图，确认账号模型权限、网络、图片效果与客户端展示行为。
-
-## 制作分发包
-
-在源码目录执行：
-
-```sh
-npm ci
-npm run check
-npm pack
-```
-
-`npm pack` 会自动构建，生成 `gpt-image-mcp-0.2.0.tgz`。分发包仅包含编译结果、`package.json`、README 和 `.env.example`，不包含真实 `.env`、测试文件、源码或 `node_modules`。同一压缩包可发给三种系统的用户安装，安装时会选择对应平台依赖。
-
-如以后发布到公共 npm，需要先确定自己有权使用的包名或作用域、发布账号和许可证。当前未执行 `npm publish`，不能假定注册表中的同名包属于本项目；现阶段请使用此项目生成的 `.tgz` 文件。
-
-接口依据：[OpenAI 图片生成文档](https://developers.openai.com/api/docs/guides/image-generation)、[MCP 服务开发文档](https://modelcontextprotocol.io/docs/develop/build-server)。
