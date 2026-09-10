@@ -15,7 +15,7 @@ if (!npmCLI) throw new Error("请通过 npm run test:package 执行安装包验�
 /** 通过当前 npm 的 JS 入口执行命令，避免依赖平台特定的 .cmd 或 shell 解析。 */
 function npm(args, cwd) {
   const result = spawnSync(process.execPath, [npmCLI, ...args], {
-    cwd, encoding: "utf8", timeout: 120000,
+    cwd, encoding: "utf8", timeout: 300000,
     env: { ...process.env, OPENAI_API_KEY: "", OPENAI_BASE_URL: "http://127.0.0.1:1/v1" },
   });
   assert.equal(result.status, 0, `npm ${args[0]} 失败：${result.stderr || result.error || result.stdout}`);

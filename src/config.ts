@@ -33,8 +33,12 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env) {
     throw new Error("IMAGE_GEN_TIMEOUT_MS 必须是大于或等于 1000 的整数，单位为毫秒。");
   }
   const outputDir = env.IMAGE_GEN_OUTPUT_DIR?.trim();
+  const responseFormat = (env.IMAGE_GEN_RESPONSE_FORMAT?.trim() || "b64_json") as "b64_json" | "url";
+  if (responseFormat !== "b64_json" && responseFormat !== "url") {
+    throw new Error("IMAGE_GEN_RESPONSE_FORMAT 仅支持 b64_json 或 url。");
+  }
   return {
-    apiKey, baseURL, model, timeout,
+    apiKey, baseURL, model, timeout, responseFormat,
     outputDir: outputDir ? localPath(outputDir) : path.join(homedir(), "gpt-image-mcp", "images"),
   };
 }

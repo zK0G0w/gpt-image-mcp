@@ -107,6 +107,7 @@ Windows 示例，JSON 中使用正斜杠可避免反斜杠转义：
 | `IMAGE_GEN_MODEL` | `gpt-image-2.5-sunburst` | 文生图和编辑共用的模型，允许兼容服务商的模型别名，需账号有权限 |
 | `IMAGE_GEN_OUTPUT_DIR` | 用户主目录下的 `gpt-image-mcp/images` | 输出根目录，支持本机绝对路径或 `~/`；自动按本地日期创建 `yyyy/MM/dd` 子目录 |
 | `IMAGE_GEN_TIMEOUT_MS` | `300000` | API 请求超时，单位毫秒，必须为不小于 1000 的整数 |
+| `IMAGE_GEN_RESPONSE_FORMAT` | `b64_json` | API 返回图片的方式：`b64_json`（返回 Base64 数据）或 `url`（返回下载地址，服务自动下载保存）。部分中转站默认返回 `url`，需对应配置 |
 
 `.env.example` 仅作为变量示例，服务不会自动读取 `.env`。本地调试可运行 `node --env-file=.env dist/index.js`，或通过 MCP 客户端的 `env` 传入变量。
 
@@ -125,7 +126,7 @@ Windows 示例，JSON 中使用正斜杠可避免反斜杠转义：
 
 Key、提示词和输入图片会发送到你配置的服务商。服务不会跟随 HTTP 重定向，请直接填写最终 API 根地址。
 
-兼容服务商必须支持 OpenAI Image API 的 JSON 文生图、multipart 图片编辑和 `data[].b64_json` 返回结构，以及当前工具所传的图片参数。仅兼容聊天接口、只返回图片 URL 或异步任务 ID 的服务不在当前兼容范围内。
+兼容服务商必须支持 OpenAI Image API 的 JSON 文生图、multipart 图片编辑，以及 `data[].b64_json` 或 `data[].url` 返回结构（通过 `IMAGE_GEN_RESPONSE_FORMAT` 选择）。仅兼容聊天接口或异步任务 ID 的服务不在当前兼容范围内。
 
 ## 端点检查与实际能力验证
 
@@ -207,9 +208,13 @@ Windows: C:\Users\用户名\gpt-image-mcp\images\2026\09\10\cozy-otter-paints-mo
 | 参数 | 默认值与范围 |
 | --- | --- |
 | `prompt` | 必填，去除首尾空白后 1～32000 字符 |
-| `size` | 默认 `auto`，也可选 `1024x1024`、`1536x1024`、`1024x1536` |
-| `quality` | 默认 `auto`，也可选 `low`、`medium`、`high` |
+| `size` | 默认 `auto`，也可选 `WIDTHxHEIGHT`（如 `1024x1024`、`1536x1024`、`3840x2160`）。宽高需为 16 的倍数，比例不超过 3:1，总像素 655360～8294400 |
+| `quality` | 默认 `auto`，也可选 `low`、`medium`、`high`、`xhigh`、`max` |
 | `format` | 默认 `png`，也可选 `jpeg`、`webp` |
+| `background` | 默认 `auto`，也可选 `transparent`、`opaque`；透明背景需配合 `png` 或 `webp` 格式 |
+| `moderation` | 仅文生图，默认 `auto`，也可选 `low`；内容安全审核级别 |
+| `output_compression` | 可选 0～100 整数，仅 `jpeg` 和 `webp` 格式生效 |
+| `input_fidelity` | 仅编辑，可选 `high` 或 `low`；控制对原图细节的保留程度 |
 | `images` | 编辑必填，1～16 张本机 PNG、JPEG 或 WebP；单图小于 50 MiB，参考图合计不超过 100 MiB |
 | `mask` | 编辑可选，本机 PNG 遮罩路径；单文件小于 50 MiB |
 

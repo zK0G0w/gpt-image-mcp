@@ -40,9 +40,12 @@ function imageResponse(bytes = png) {
 test("配置使用本机主目录，拒绝相对路径和无效配置", () => {
   assert.equal(localPath("~/画室 with spaces"), path.join(homedir(), "画室 with spaces"));
   assert.equal(readConfig({ OPENAI_API_KEY: "测试" }).outputDir, path.join(homedir(), "gpt-image-mcp", "images"));
+  assert.equal(readConfig({ OPENAI_API_KEY: "测试" }).responseFormat, "b64_json");
+  assert.equal(readConfig({ OPENAI_API_KEY: "测试", IMAGE_GEN_RESPONSE_FORMAT: "url" }).responseFormat, "url");
   assert.throws(() => localPath("./images"), /绝对路径/);
   assert.throws(() => readConfig({}), /OPENAI_API_KEY/);
   assert.throws(() => readConfig({ OPENAI_API_KEY: "测试", IMAGE_GEN_TIMEOUT_MS: "abc" }), /整数/);
+  assert.throws(() => readConfig({ OPENAI_API_KEY: "测试", IMAGE_GEN_RESPONSE_FORMAT: "invalid" }), /b64_json/);
 });
 
 test("俏皮名称在 POSIX 和 Windows 下均为安全文件名", () => {
@@ -93,6 +96,9 @@ test("MCP 发现三个工具，文生图发送 JSON 并返回真实落盘路径"
     const request = JSON.parse(String(init?.body));
     assert.equal(request.prompt, "水獭在月光下画画");
     assert.equal(request.output_format, "png");
+    assert.equal(request.response_format, "b64_json");
+    assert.equal(request.background, "auto");
+    assert.equal(request.moderation, "auto");
     assert.equal(request.n, 1);
     return imageResponse();
   });
@@ -317,4 +323,88 @@ test("模型列表不存在时仍允许实际文生图", async (t) => {
   assert.equal(diagnosticSchema.parse(check.structuredContent).modelsEndpoint, "unavailable");
   const generated = await client.callTool({ name: "generate_image", arguments: { prompt: "画画" } });
   assert.ok(!generated.isError);
+});
+
+test("response_format 为 url 时下载图片并正常落盘", async (t) => {
+  let count = 0;
+  const { client } = await fixture(t, async (url, init) => {
+    const urlStr = String(url);
+    if (urlStr.endsWith("/images/generations")) {
+      count++;
+      const request = JSON.parse(String(init?.body));
+      assert.equal(request.response_format, "url");
+      return Response.json({ created: 1, data: [{ url: "https://example.test/image.png" }] });
+    }
+    if (urlStr === "https://example.test/image.png") {
+      return new Response(png, { status: 200, headers: { "content-type": "image/png" } });
+    }
+    return new Response("", { status: 404 });
+  }, { IMAGE_GEN_RESPONSE_FORMAT: "url" });
+  const result = await client.callTool({ name: "generate_image", arguments: { prompt: "画画" } });
+  assert.ok(!result.isError);
+  const output = JSON.parse(JSON.stringify(result.structuredContent));
+  assert.deepEqual(await readFile(output.images[0].path), png);
+  assert.equal(count, 1);
+});
+
+test("自定义尺寸通过校验并传递给 API", async (t) => {
+  let receivedSize = "";
+  const { client } = await fixture(t, async (url, init) => {
+    if (String(url).endsWith("/images/generations")) {
+      receivedSize = JSON.parse(String(init?.body)).size;
+      return imageResponse();
+    }
+    return new Response("", { status: 404 });
+  });
+  const result = await client.callTool({ name: "generate_image", arguments: { prompt: "画画", size: "3840x2160" } });
+  assert.ok(!result.isError);
+  assert.equal(receivedSize, "3840x2160");
+});
+
+test("非法尺寸在调用上游前被拒绝", async (t) => {
+  let count = 0;
+  const { client } = await fixture(t, async () => { count++; return imageResponse(); });
+  const invalid = ["100x100", "1024x1025", "10000x10000", "abc", "1024"];
+  for (const size of invalid) {
+    const result = await client.callTool({ name: "generate_image", arguments: { prompt: "画画", size } });
+    assert.equal(result.isError, true);
+  }
+  assert.equal(count, 0);
+});
+
+test("文生图传递 moderation 和 output_compression 参数", async (t) => {
+  let request: Record<string, unknown> = {};
+  const jpeg = await sharp(png).toFormat("jpeg").toBuffer();
+  const { client } = await fixture(t, async (url, init) => {
+    if (String(url).endsWith("/images/generations")) {
+      request = JSON.parse(String(init?.body));
+      return Response.json({ created: 1, data: [{ b64_json: jpeg.toString("base64") }] });
+    }
+    return new Response("", { status: 404 });
+  });
+  const result = await client.callTool({ name: "generate_image", arguments: {
+    prompt: "画画", format: "jpeg", moderation: "low", output_compression: 80,
+  } });
+  assert.ok(!result.isError);
+  assert.equal(request.moderation, "low");
+  assert.equal(request.output_compression, 80);
+});
+
+test("编辑传递 input_fidelity 参数且不含 moderation", async (t) => {
+  let form: FormData | null = null;
+  const { client, directory } = await fixture(t, async (url, init) => {
+    if (String(url).endsWith("/images/edits")) {
+      form = await new Request("https://example.test", init).formData();
+      return imageResponse();
+    }
+    return new Response("", { status: 404 });
+  });
+  const original = path.join(directory, "原图.png");
+  await writeFile(original, png);
+  const result = await client.callTool({ name: "edit_image", arguments: {
+    prompt: "改画", images: [original], input_fidelity: "high",
+  } });
+  assert.ok(!result.isError, JSON.stringify(result));
+  assert.equal(form!.get("input_fidelity"), "high");
+  assert.equal(form!.get("moderation"), null);
 });
