@@ -4,26 +4,34 @@
 
 ## 安装与运行
 
-需要 Node.js 22 或更高版本，以及具有所选模型调用权限和可用额度的 OpenAI 或兼容服务商 API 密钥。支持 Linux、macOS 和 Windows；图片处理依赖 sharp 的平台二进制包，请在目标机器运行安装命令，不要跨系统复制 `node_modules`。
+需要 Node.js 22 或更高版本，以及具有所选模型调用权限和可用额度的 OpenAI 或兼容服务商 API 密钥。支持 Linux、macOS 和 Windows。
 
-### 通过安装包使用
+### 快速开始
 
-当前可分发 `gpt-image-mcp-0.2.0.tgz`，尚未发布到公共 npm 注册表。收到安装包后，在文件所在目录执行：
-
-```sh
-npm install --global ./gpt-image-mcp-0.2.0.tgz
-gpt-image-mcp --help
-```
-
-安装时 npm 会获取运行依赖，用户无需安装 TypeScript 或自行构建。每位用户在自己的 MCP 客户端中配置 Key、端点和输出目录。
-
-macOS / Linux 的 MCP 配置示例：
+无需手动安装，在 MCP 客户端配置中直接使用 `npx` 运行：
 
 ```json
 {
   "mcpServers": {
     "image-gen": {
-      "command": "gpt-image-mcp",
+      "command": "npx",
+      "args": ["-y", "gpt-image-mcp"],
+      "env": {
+        "OPENAI_API_KEY": "你的 API 密钥"
+      }
+    }
+  }
+}
+```
+
+首次启动会自动下载依赖，之后使用缓存。完整配置示例：
+
+```json
+{
+  "mcpServers": {
+    "image-gen": {
+      "command": "npx",
+      "args": ["-y", "gpt-image-mcp"],
       "env": {
         "OPENAI_API_KEY": "你的 API 密钥",
         "OPENAI_BASE_URL": "https://你的服务商/v1",
@@ -35,23 +43,25 @@ macOS / Linux 的 MCP 配置示例：
 }
 ```
 
-Windows 上 npm 会生成 `.cmd` 启动器，客户端如果无法直接启动它，可将上述命令配置改为：
+锁定版本可将 `args` 改为 `["-y", "gpt-image-mcp@0.2.0"]`。
+
+Windows 上如果客户端无法直接启动 npx，可改为：
 
 ```json
 {
   "command": "cmd",
-  "args": ["/d", "/c", "gpt-image-mcp"]
+  "args": ["/d", "/c", "npx", "-y", "gpt-image-mcp"]
 }
 ```
 
-如果 GUI 客户端的 PATH 中没有 npm 全局目录，可运行 `npm root --global` 找到安装位置，再配置 `command: "node"`，将该目录下 `gpt-image-mcp/dist/index.js` 的绝对路径填入 `args`。这个方式适用于三个系统。
+### OpenAI Codex
 
-OpenAI Codex 使用项目级 TOML 配置（`.codex/config.toml`），需要写全 `node` 和入口文件的绝对路径。先运行 `which node` 和 `npm root --global` 获取路径，再填入配置：
+Codex 使用项目级 TOML 配置（`.codex/config.toml`），需要写全 `npx` 的绝对路径。运行 `which npx` 获取路径后填入：
 
 ```toml
 [mcp_servers.image-gen]
-command = "/你的node路径/bin/node"
-args = ["/npm全局目录/gpt-image-mcp/dist/index.js"]
+command = "/你的npx路径/bin/npx"
+args = ["-y", "gpt-image-mcp"]
 
 [mcp_servers.image-gen.env]
 OPENAI_API_KEY = "你的 API 密钥"
@@ -60,13 +70,17 @@ IMAGE_GEN_MODEL = "服务商提供的图片模型名称"
 IMAGE_GEN_OUTPUT_DIR = "~/pictures"
 ```
 
-也可以通过本地压缩包临时运行，无需全局安装（替换为安装包实际路径）：
+### 全局安装（可选）
+
+如果希望避免首次启动的下载等待，也可以全局安装后直接使用命令名：
 
 ```sh
-npx --yes --package="/安装包绝对路径/gpt-image-mcp-0.2.0.tgz" gpt-image-mcp --help
+npm install --global gpt-image-mcp
 ```
 
-如果客户端找不到 `node`，将 `command` 替换为本机 Node.js 可执行文件的绝对路径。工具执行超时建议设为至少 360 秒，具体配置字段由客户端决定；服务自身的 API 超时默认为 300 秒。
+安装后将 MCP 配置中的 `"command"` 改为 `"gpt-image-mcp"`，去掉 `"args"`。
+
+工具执行超时建议设为至少 360 秒，具体配置字段由客户端决定；服务自身的 API 超时默认为 300 秒。
 
 服务启动后会等待 MCP 输入，直接在终端运行时没有欢迎输出属于正常行为。日志只写入 stderr，stdout 保留给 MCP 协议。
 
