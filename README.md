@@ -109,7 +109,7 @@ npm install --global gpt-image-mcp
 
 ### 通用说明
 
-- 锁定版本可将 `args` 改为 `["-y", "gpt-image-mcp@0.2.0"]`
+- 锁定版本可将 `args` 改为 `["-y", "gpt-image-mcp@0.2.1"]`
 - 工具执行超时建议设为至少 360 秒，具体配置字段由客户端决定；服务自身的 API 超时默认为 300 秒
 - 服务启动后会等待 MCP 输入，直接在终端运行时没有欢迎输出属于正常行为
 - 日志只写入 stderr，stdout 保留给 MCP 协议
