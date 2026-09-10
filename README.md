@@ -2,13 +2,44 @@
 
 基于 TypeScript 的本地 `stdio` MCP 服务，调用 GPT Image 完成文生图、图片编辑和参考风格创作，图片保存在本机，返回绝对路径及文件 URI。
 
-## 安装与运行
+## 安装与配置
 
-需要 Node.js 22 或更高版本，以及具有所选模型调用权限和可用额度的 OpenAI 或兼容服务商 API 密钥。支持 Linux、macOS 和 Windows。
+需要 Node.js 22 或更高版本，以及具有所选模型调用权限和可用额度的 OpenAI 或兼容服务商 API 密钥。支持 Linux、macOS 和 Windows。无需手动安装，通过 `npx` 自动下载运行。
 
-### 快速开始
+### Claude Code
 
-无需手动安装，在 MCP 客户端配置中直接使用 `npx` 运行：
+一条命令完成配置（仅当前项目生效）：
+
+```sh
+claude mcp add image-gen -- npx -y gpt-image-mcp
+```
+
+不同作用域：
+
+| 命令 | 作用域 |
+| --- | --- |
+| `claude mcp add image-gen -- npx -y gpt-image-mcp` | 当前项目，仅自己可见 |
+| `claude mcp add --scope project image-gen -- npx -y gpt-image-mcp` | 写入 `.mcp.json`，团队共享 |
+| `claude mcp add --scope user image-gen -- npx -y gpt-image-mcp` | 全局，跨项目生效 |
+
+添加后需要设置环境变量。编辑对应配置文件，在 `image-gen` 下添加 `env` 字段：
+
+```json
+{
+  "env": {
+    "OPENAI_API_KEY": "你的 API 密钥",
+    "OPENAI_BASE_URL": "https://你的服务商/v1",
+    "IMAGE_GEN_MODEL": "服务商提供的图片模型名称",
+    "IMAGE_GEN_OUTPUT_DIR": "~/pictures"
+  }
+}
+```
+
+仅 `OPENAI_API_KEY` 必填，其余按需配置。详见下方[配置](#配置)章节。
+
+### Claude Desktop
+
+编辑 `claude_desktop_config.json`（macOS 路径 `~/Library/Application Support/Claude/claude_desktop_config.json`）：
 
 ```json
 {
@@ -24,7 +55,9 @@
 }
 ```
 
-首次启动会自动下载依赖，之后使用缓存。完整配置示例：
+### Cursor
+
+在项目根目录创建 `.cursor/mcp.json`：
 
 ```json
 {
@@ -33,30 +66,16 @@
       "command": "npx",
       "args": ["-y", "gpt-image-mcp"],
       "env": {
-        "OPENAI_API_KEY": "你的 API 密钥",
-        "OPENAI_BASE_URL": "https://你的服务商/v1",
-        "IMAGE_GEN_MODEL": "服务商提供的图片模型名称",
-        "IMAGE_GEN_OUTPUT_DIR": "~/pictures"
+        "OPENAI_API_KEY": "你的 API 密钥"
       }
     }
   }
 }
 ```
 
-锁定版本可将 `args` 改为 `["-y", "gpt-image-mcp@0.2.0"]`。
-
-Windows 上如果客户端无法直接启动 npx，可改为：
-
-```json
-{
-  "command": "cmd",
-  "args": ["/d", "/c", "npx", "-y", "gpt-image-mcp"]
-}
-```
-
 ### OpenAI Codex
 
-Codex 使用项目级 TOML 配置（`.codex/config.toml`），需要写全 `npx` 的绝对路径。运行 `which npx` 获取路径后填入：
+在 `.codex/config.toml` 中配置，需要写全 `npx` 的绝对路径（运行 `which npx` 获取）：
 
 ```toml
 [mcp_servers.image-gen]
@@ -65,9 +84,17 @@ args = ["-y", "gpt-image-mcp"]
 
 [mcp_servers.image-gen.env]
 OPENAI_API_KEY = "你的 API 密钥"
-OPENAI_BASE_URL = "https://你的服务商/v1"
-IMAGE_GEN_MODEL = "服务商提供的图片模型名称"
-IMAGE_GEN_OUTPUT_DIR = "~/pictures"
+```
+
+### Windows 补充
+
+Windows 上如果客户端无法直接启动 npx，可将 `command` 和 `args` 改为：
+
+```json
+{
+  "command": "cmd",
+  "args": ["/d", "/c", "npx", "-y", "gpt-image-mcp"]
+}
 ```
 
 ### 全局安装（可选）
@@ -78,11 +105,14 @@ IMAGE_GEN_OUTPUT_DIR = "~/pictures"
 npm install --global gpt-image-mcp
 ```
 
-安装后将 MCP 配置中的 `"command"` 改为 `"gpt-image-mcp"`，去掉 `"args"`。
+安装后将配置中的 `"command"` 改为 `"gpt-image-mcp"`，去掉 `"args"`。
 
-工具执行超时建议设为至少 360 秒，具体配置字段由客户端决定；服务自身的 API 超时默认为 300 秒。
+### 通用说明
 
-服务启动后会等待 MCP 输入，直接在终端运行时没有欢迎输出属于正常行为。日志只写入 stderr，stdout 保留给 MCP 协议。
+- 锁定版本可将 `args` 改为 `["-y", "gpt-image-mcp@0.2.0"]`
+- 工具执行超时建议设为至少 360 秒，具体配置字段由客户端决定；服务自身的 API 超时默认为 300 秒
+- 服务启动后会等待 MCP 输入，直接在终端运行时没有欢迎输出属于正常行为
+- 日志只写入 stderr，stdout 保留给 MCP 协议
 
 ## 配置
 
