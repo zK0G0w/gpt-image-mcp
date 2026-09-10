@@ -28,7 +28,7 @@ try {
   const files = packed.files.map((file) => file.path);
   assert.ok(files.includes("dist/index.js"));
   assert.ok(files.includes(".env.example"));
-  assert.ok(files.every((file) => file.startsWith("dist/") || ["package.json", "README.md", ".env.example"].includes(file)));
+  assert.ok(files.every((file) => file.startsWith("dist/") || ["package.json", "README.md", "LICENSE", ".env.example"].includes(file)));
   await writeFile(path.join(temporary, "package.json"), JSON.stringify({ private: true }));
   // 从压缩包独立安装，保证成功启动不依赖源码目录中的开发依赖。
   npm(["install", "--no-audit", "--no-fund", path.join(temporary, packed.filename)], temporary);
