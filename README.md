@@ -46,6 +46,20 @@ Windows 上 npm 会生成 `.cmd` 启动器，客户端如果无法直接启动�
 
 如果 GUI 客户端的 PATH 中没有 npm 全局目录，可运行 `npm root --global` 找到安装位置，再配置 `command: "node"`，将该目录下 `gpt-image-mcp/dist/index.js` 的绝对路径填入 `args`。这个方式适用于三个系统。
 
+OpenAI Codex 使用项目级 TOML 配置（`.codex/config.toml`），需要写全 `node` 和入口文件的绝对路径。先运行 `which node` 和 `npm root --global` 获取路径，再填入配置：
+
+```toml
+[mcp_servers.image-gen]
+command = "/你的node路径/bin/node"
+args = ["/npm全局目录/gpt-image-mcp/dist/index.js"]
+
+[mcp_servers.image-gen.env]
+OPENAI_API_KEY = "你的 API 密钥"
+OPENAI_BASE_URL = "https://你的服务商/v1"
+IMAGE_GEN_MODEL = "服务商提供的图片模型名称"
+IMAGE_GEN_OUTPUT_DIR = "~/pictures"
+```
+
 也可以通过本地压缩包临时运行，无需全局安装（替换为安装包实际路径）：
 
 ```sh
@@ -92,6 +106,17 @@ Windows 示例，JSON 中使用正斜杠可避免反斜杠转义：
     }
   }
 }
+```
+
+OpenAI Codex 从源码运行时，在 `.codex/config.toml` 中配置：
+
+```toml
+[mcp_servers.image-gen]
+command = "/你的node路径/bin/node"
+args = ["/你的项目路径/gpt-image-mcp/dist/index.js"]
+
+[mcp_servers.image-gen.env]
+OPENAI_API_KEY = "你的 API 密钥"
 ```
 
 如果客户端找不到 `node`，将 `command` 替换为本机 Node.js 可执行文件的绝对路径。工具执行超时建议设为至少 360 秒，具体配置字段由客户端决定；服务自身的 API 超时默认为 300 秒。
