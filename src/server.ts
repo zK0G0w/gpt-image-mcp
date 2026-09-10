@@ -48,7 +48,7 @@ async function toolResult<T extends Record<string, unknown>>(operation: () => Pr
  */
 export function createServer(config: Config, client = createApiClient(config)) {
   const service = new ImageService(client, config);
-  const server = new McpServer({ name: "gpt-image-mcp", version: "0.1.0" });
+  const server = new McpServer({ name: "gpt-image-mcp", version: "0.2.1" });
   const annotations = { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true };
   server.registerTool("check_endpoint", {
     title: "端点检查",

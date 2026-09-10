@@ -78,6 +78,8 @@ npm run dev            # 通过 tsx 直接运行源码
 | `IMAGE_GEN_OUTPUT_DIR` | `~/gpt-image-mcp/images` | 输出根目录 |
 | `IMAGE_GEN_TIMEOUT_MS` | `300000` | 请求超时（毫秒） |
 | `IMAGE_GEN_RESPONSE_FORMAT` | `b64_json` | 返回方式：`b64_json` 或 `url` |
+| `IMAGE_GEN_DEFAULT_SIZE` | `auto` | 全局默认分辨率，如 `1024x1024` |
+| `IMAGE_GEN_DEFAULT_QUALITY` | `auto` | 全局默认质量：`low`/`medium`/`high`/`xhigh`/`max` |
 
 ## CI/CD
 

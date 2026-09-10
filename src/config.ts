@@ -37,10 +37,30 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env) {
   if (responseFormat !== "b64_json" && responseFormat !== "url") {
     throw new Error("IMAGE_GEN_RESPONSE_FORMAT 仅支持 b64_json 或 url。");
   }
+  const defaultSize = parseDefaultSize(env.IMAGE_GEN_DEFAULT_SIZE?.trim());
+  const validQualities = ["auto", "low", "medium", "high", "xhigh", "max"] as const;
+  const defaultQuality = (env.IMAGE_GEN_DEFAULT_QUALITY?.trim() || "auto") as typeof validQualities[number];
+  if (!validQualities.includes(defaultQuality)) {
+    throw new Error(`IMAGE_GEN_DEFAULT_QUALITY 仅支持 ${validQualities.join("、")}。`);
+  }
   return {
-    apiKey, baseURL, model, timeout, responseFormat,
+    apiKey, baseURL, model, timeout, responseFormat, defaultSize, defaultQuality,
     outputDir: outputDir ? localPath(outputDir) : path.join(homedir(), "gpt-image-mcp", "images"),
   };
+}
+
+/** 校验 IMAGE_GEN_DEFAULT_SIZE：空值返回 "auto"，否则必须满足 WIDTHxHEIGHT 约束。 */
+function parseDefaultSize(value: string | undefined): string {
+  if (!value) return "auto";
+  const match = /^(\d+)x(\d+)$/.exec(value);
+  if (!match) throw new Error("IMAGE_GEN_DEFAULT_SIZE 格式必须为 WIDTHxHEIGHT（如 1024x1024）。");
+  const w = Number(match[1]), h = Number(match[2]);
+  if (w % 16 !== 0 || h % 16 !== 0 || w <= 0 || h <= 0
+    || Math.max(w, h) / Math.min(w, h) > 3
+    || w * h < 655_360 || w * h > 8_294_400) {
+    throw new Error("IMAGE_GEN_DEFAULT_SIZE 宽高需为 16 的倍数，比例不超过 3:1，总像素 655360~8294400。");
+  }
+  return value;
 }
 
 /** 仅为无路径地址补 /v1；显式路径代表用户选择，不能猜测并改写。 */

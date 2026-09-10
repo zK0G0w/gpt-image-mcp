@@ -59,9 +59,11 @@ export class ImageService {
    * @throws 上游请求失败、结果不可解析或本地保存失败时抛出错误。
    */
   async generate(input: z.infer<typeof generateSchema>, signal?: AbortSignal) {
+    const size = input.size === "auto" ? this.config.defaultSize : input.size;
+    const quality = input.quality === "auto" ? this.config.defaultQuality : input.quality;
     const response = await this.client.images.generate({
-      model: this.config.model, prompt: input.prompt, size: input.size,
-      quality: input.quality, output_format: input.format, n: 1,
+      model: this.config.model, prompt: input.prompt, size,
+      quality, output_format: input.format, n: 1,
       background: input.background,
       moderation: input.moderation,
       ...(this.config.responseFormat === "url" && { response_format: "url" as const }),
@@ -97,9 +99,11 @@ export class ImageService {
         throw new Error("遮罩必须是带透明通道的 PNG，且尺寸与第一张原图一致。");
       }
     }
+    const size = input.size === "auto" ? this.config.defaultSize : input.size;
+    const quality = input.quality === "auto" ? this.config.defaultQuality : input.quality;
     const response = await this.client.images.edit({
-      model: this.config.model, prompt: input.prompt, size: input.size,
-      quality: input.quality, output_format: input.format, n: 1,
+      model: this.config.model, prompt: input.prompt, size,
+      quality, output_format: input.format, n: 1,
       background: input.background,
       image: images.map((image) => image.upload), mask: mask?.upload,
       ...(this.config.responseFormat === "url" && { response_format: "url" as const }),

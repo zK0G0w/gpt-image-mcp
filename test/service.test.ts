@@ -46,6 +46,14 @@ test("配置使用本机主目录，拒绝相对路径和无效配置", () => {
   assert.throws(() => readConfig({}), /OPENAI_API_KEY/);
   assert.throws(() => readConfig({ OPENAI_API_KEY: "测试", IMAGE_GEN_TIMEOUT_MS: "abc" }), /整数/);
   assert.throws(() => readConfig({ OPENAI_API_KEY: "测试", IMAGE_GEN_RESPONSE_FORMAT: "invalid" }), /b64_json/);
+  assert.equal(readConfig({ OPENAI_API_KEY: "测试" }).defaultSize, "auto");
+  assert.equal(readConfig({ OPENAI_API_KEY: "测试" }).defaultQuality, "auto");
+  assert.equal(readConfig({ OPENAI_API_KEY: "测试", IMAGE_GEN_DEFAULT_SIZE: "1024x1024" }).defaultSize, "1024x1024");
+  assert.equal(readConfig({ OPENAI_API_KEY: "测试", IMAGE_GEN_DEFAULT_QUALITY: "high" }).defaultQuality, "high");
+  assert.throws(() => readConfig({ OPENAI_API_KEY: "测试", IMAGE_GEN_DEFAULT_SIZE: "100x100" }), /IMAGE_GEN_DEFAULT_SIZE/);
+  assert.throws(() => readConfig({ OPENAI_API_KEY: "测试", IMAGE_GEN_DEFAULT_SIZE: "abc" }), /IMAGE_GEN_DEFAULT_SIZE/);
+  assert.throws(() => readConfig({ OPENAI_API_KEY: "测试", IMAGE_GEN_DEFAULT_SIZE: "1024x1025" }), /IMAGE_GEN_DEFAULT_SIZE/);
+  assert.throws(() => readConfig({ OPENAI_API_KEY: "测试", IMAGE_GEN_DEFAULT_QUALITY: "ultra" }), /IMAGE_GEN_DEFAULT_QUALITY/);
 });
 
 test("俏皮名称在 POSIX 和 Windows 下均为安全文件名", () => {
@@ -388,6 +396,57 @@ test("文生图传递 moderation 和 output_compression 参数", async (t) => {
   assert.ok(!result.isError);
   assert.equal(request.moderation, "low");
   assert.equal(request.output_compression, 80);
+});
+
+test("默认尺寸和质量通过环境变量配置后替代 auto 传递给 API", async (t) => {
+  let request: Record<string, unknown> = {};
+  const { client } = await fixture(t, async (url, init) => {
+    if (String(url).endsWith("/images/generations")) {
+      request = JSON.parse(String(init?.body));
+      return imageResponse();
+    }
+    return new Response("", { status: 404 });
+  }, { IMAGE_GEN_DEFAULT_SIZE: "1536x1024", IMAGE_GEN_DEFAULT_QUALITY: "high" });
+  const result = await client.callTool({ name: "generate_image", arguments: { prompt: "画画" } });
+  assert.ok(!result.isError);
+  assert.equal(request.size, "1536x1024");
+  assert.equal(request.quality, "high");
+});
+
+test("显式指定 size 和 quality 时覆盖环境变量默认值", async (t) => {
+  let request: Record<string, unknown> = {};
+  const { client } = await fixture(t, async (url, init) => {
+    if (String(url).endsWith("/images/generations")) {
+      request = JSON.parse(String(init?.body));
+      return imageResponse();
+    }
+    return new Response("", { status: 404 });
+  }, { IMAGE_GEN_DEFAULT_SIZE: "1536x1024", IMAGE_GEN_DEFAULT_QUALITY: "high" });
+  const result = await client.callTool({ name: "generate_image", arguments: {
+    prompt: "画画", size: "1024x1024", quality: "low",
+  } });
+  assert.ok(!result.isError);
+  assert.equal(request.size, "1024x1024");
+  assert.equal(request.quality, "low");
+});
+
+test("编辑接口同样使用环境变量默认尺寸和质量", async (t) => {
+  let form: FormData | null = null;
+  const { client, directory } = await fixture(t, async (url, init) => {
+    if (String(url).endsWith("/images/edits")) {
+      form = await new Request("https://example.test", init).formData();
+      return imageResponse();
+    }
+    return new Response("", { status: 404 });
+  }, { IMAGE_GEN_DEFAULT_SIZE: "1536x1024", IMAGE_GEN_DEFAULT_QUALITY: "medium" });
+  const original = path.join(directory, "原图.png");
+  await writeFile(original, png);
+  const result = await client.callTool({ name: "edit_image", arguments: {
+    prompt: "改画", images: [original],
+  } });
+  assert.ok(!result.isError, JSON.stringify(result));
+  assert.equal(form!.get("size"), "1536x1024");
+  assert.equal(form!.get("quality"), "medium");
 });
 
 test("编辑传递 input_fidelity 参数且不含 moderation", async (t) => {

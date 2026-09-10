@@ -39,6 +39,8 @@ MCP 配置（适用于 Claude Code、Claude Desktop、Cursor 等支持 MCP 的�
 | `IMAGE_GEN_OUTPUT_DIR` | 用户主目录下的 `gpt-image-mcp/images` | 输出根目录，支持本机绝对路径或 `~/`；自动按本地日期创建 `yyyy/MM/dd` 子目录 |
 | `IMAGE_GEN_TIMEOUT_MS` | `300000` | API 请求超时，单位毫秒，必须为不小于 1000 的整数 |
 | `IMAGE_GEN_RESPONSE_FORMAT` | `b64_json` | API 返回图片的方式：`b64_json`（返回 Base64 数据）或 `url`（返回下载地址，服务自动下载保存）。默认 `b64_json` 时不向 API 发送此参数，仅配置 `url` 时才显式发送。部分代理对新模型（如 `gpt-image-2.5-sunburst`）可能不支持此参数，遇到 `unknown_parameter` 错误时请保持默认值 |
+| `IMAGE_GEN_DEFAULT_SIZE` | `auto` | 全局默认分辨率，格式为 `WIDTHxHEIGHT`（如 `1024x1024`）。不填或留空时使用 `auto`，由 API 自行决定。宽高需为 16 的倍数，比例不超过 3:1，总像素 655360~8294400。单次调用仍可通过 `size` 参数覆盖 |
+| `IMAGE_GEN_DEFAULT_QUALITY` | `auto` | 全局默认质量：`auto`、`low`、`medium`、`high`、`xhigh`、`max`。不填或留空时使用 `auto`，由 API 自行决定。单次调用仍可通过 `quality` 参数覆盖 |
 
 `OPENAI_BASE_URL` 填写 API 根地址；未配置、空字符串或纯空格均使用官方端点。只有地址不包含路径时自动补 `/v1`，已有路径则按用户配置保留，避免破坏代理前缀或其他版本。尾部斜杠会去除，不会重复追加 `/v1`。
 
