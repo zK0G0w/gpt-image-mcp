@@ -1,12 +1,14 @@
+[中文](https://github.com/zK0G0w/gpt-image-mcp/blob/main/README-zh.md) | **English**
+
 # gpt-image-mcp
 
-基于 TypeScript 的本地 `stdio` MCP 服务，调用 GPT Image 完成文生图、图片编辑和参考风格创作，图片保存在本机，返回绝对路径及文件 URI。
+A local `stdio` MCP server written in TypeScript. It calls GPT Image for text-to-image generation, image editing and reference-style creation. Images are saved on your machine, and the server returns absolute paths and file URIs.
 
-## 安装与配置
+## Install and configure
 
-需要 Node.js 22 或更高版本，以及具有所选模型调用权限和可用额度的 OpenAI 或兼容服务商 API 密钥。支持 Linux、macOS 和 Windows。无需手动安装，通过 `npx` 自动下载运行。
+Requires Node.js 22 or later, and an API key for OpenAI or a compatible provider that has access to the chosen model and available quota. Linux, macOS and Windows are supported. No manual install is needed; `npx` downloads and runs it.
 
-MCP 配置（适用于 Claude Code、Claude Desktop、Cursor 等支持 MCP 的客户端）：
+MCP configuration (works with Claude Code, Claude Desktop, Cursor and other MCP clients):
 
 ```json
 {
@@ -15,9 +17,9 @@ MCP 配置（适用于 Claude Code、Claude Desktop、Cursor 等支持 MCP 的�
       "command": "npx",
       "args": ["-y", "gpt-image-mcp"],
       "env": {
-        "OPENAI_API_KEY": "你的 API 密钥",
-        "OPENAI_BASE_URL": "https://你的服务商/v1",
-        "IMAGE_GEN_MODEL": "服务商提供的图片模型名称",
+        "OPENAI_API_KEY": "your API key",
+        "OPENAI_BASE_URL": "https://your-provider/v1",
+        "IMAGE_GEN_MODEL": "image model name from your provider",
         "IMAGE_GEN_OUTPUT_DIR": "~/pictures"
       }
     }
@@ -25,67 +27,71 @@ MCP 配置（适用于 Claude Code、Claude Desktop、Cursor 等支持 MCP 的�
 }
 ```
 
-仅 `OPENAI_API_KEY` 必填，其余按需配置。详见下方[配置](#配置)章节。
+Only `OPENAI_API_KEY` is required; the rest is optional. See [Configuration](#configuration) below.
 
-首次启动会自动下载依赖，之后使用缓存。工具执行超时建议设为至少 360 秒；服务自身的 API 超时默认为 300 秒。
+The first start downloads dependencies; later starts use the cache. Set the client's tool execution timeout to at least 360 seconds; the server's own API timeout defaults to 300 seconds.
 
-## 配置
+## Companion Skill
 
-| 环境变量 | 默认值 | 说明 |
+The repository also ships an agent skill, [`skills/gpt-image-workflow`](https://github.com/zK0G0w/gpt-image-mcp/tree/main/skills/gpt-image-workflow), that teaches an agent when and how to use these tools (prompting, source vs. style-reference images, iteration, cost and timeout handling). The skill does not install or run this MCP server; you still configure the server and your API key yourself. It is released under the same MIT license as this repository. The skill is not part of the npm package; get it from the GitHub repository.
+
+## Configuration
+
+| Variable | Default | Description |
 | --- | --- | --- |
-| `OPENAI_API_KEY` | 必填 | OpenAI API 密钥，通过客户端环境变量注入 |
-| `OPENAI_BASE_URL` | `https://api.openai.com/v1` | 未填写或留空时使用官方端点；仅填写域名时自动补 `/v1`，已有路径保留 |
-| `IMAGE_GEN_MODEL` | `gpt-image-2.5-sunburst` | 文生图和编辑共用的模型，允许兼容服务商的模型别名，需账号有权限 |
-| `IMAGE_GEN_OUTPUT_DIR` | 用户主目录下的 `gpt-image-mcp/images` | 输出根目录，支持本机绝对路径或 `~/`；自动按本地日期创建 `yyyy/MM/dd` 子目录 |
-| `IMAGE_GEN_TIMEOUT_MS` | `300000` | API 请求超时，单位毫秒，必须为不小于 1000 的整数 |
-| `IMAGE_GEN_RESPONSE_FORMAT` | `b64_json` | API 返回图片的方式：`b64_json`（返回 Base64 数据）或 `url`（返回下载地址，服务自动下载保存）。默认 `b64_json` 时不向 API 发送此参数，仅配置 `url` 时才显式发送。部分代理对新模型（如 `gpt-image-2.5-sunburst`）可能不支持此参数，遇到 `unknown_parameter` 错误时请保持默认值 |
-| `IMAGE_GEN_DEFAULT_SIZE` | `auto` | 全局默认分辨率，格式为 `WIDTHxHEIGHT`（如 `1024x1024`）。不填或留空时使用 `auto`，由 API 自行决定。宽高需为 16 的倍数，比例不超过 3:1，总像素 655360~8294400。单次调用仍可通过 `size` 参数覆盖 |
-| `IMAGE_GEN_DEFAULT_QUALITY` | `auto` | 全局默认质量：`auto`、`low`、`medium`、`high`、`xhigh`、`max`。不填或留空时使用 `auto`，由 API 自行决定。单次调用仍可通过 `quality` 参数覆盖 |
+| `OPENAI_API_KEY` | required | OpenAI API key, injected through the client's environment variables |
+| `OPENAI_BASE_URL` | `https://api.openai.com/v1` | The official endpoint is used when unset or empty. A bare domain gets `/v1` appended; an existing path is kept as is |
+| `IMAGE_GEN_MODEL` | `gpt-image-2.5-sunburst` | Model shared by generation and editing. Provider model aliases are allowed; your account must have access |
+| `IMAGE_GEN_OUTPUT_DIR` | `gpt-image-mcp/images` under the user's home directory | Output root, an absolute local path or `~/`. `yyyy/MM/dd` subdirectories are created by local date |
+| `IMAGE_GEN_TIMEOUT_MS` | `300000` | API request timeout in milliseconds; an integer of at least 1000 |
+| `IMAGE_GEN_RESPONSE_FORMAT` | `b64_json` | How the API returns images: `b64_json` (Base64 data) or `url` (a download link that the server fetches and saves). With the default `b64_json` the parameter is not sent to the API; it is only sent explicitly when set to `url`. Some proxies do not support it for newer models (such as `gpt-image-2.5-sunburst`); if you see an `unknown_parameter` error, keep the default |
+| `IMAGE_GEN_DEFAULT_SIZE` | `auto` | Global default size as `WIDTHxHEIGHT` (for example `1024x1024`). Unset or empty means `auto`, and the API decides. Width and height must be multiples of 16, the aspect ratio at most 3:1, and total pixels between 655360 and 8294400. A single call can still override it with `size` |
+| `IMAGE_GEN_DEFAULT_QUALITY` | `auto` | Global default quality: `auto`, `low`, `medium`, `high`, `xhigh` or `max`. Unset or empty means `auto`, and the API decides. A single call can still override it with `quality` |
 
-`OPENAI_BASE_URL` 填写 API 根地址；未配置、空字符串或纯空格均使用官方端点。只有地址不包含路径时自动补 `/v1`，已有路径则按用户配置保留，避免破坏代理前缀或其他版本。尾部斜杠会去除，不会重复追加 `/v1`。
+`OPENAI_BASE_URL` takes the API base URL; unset, empty or whitespace-only values use the official endpoint. `/v1` is appended only when the address has no path; an existing path is kept as configured so proxy prefixes and other versions are not broken. Trailing slashes are removed and `/v1` is never appended twice.
 
-| 用户填写 | 实际使用的 API 根地址 |
+| You enter | API base URL actually used |
 | --- | --- |
-| 不填 | `https://api.openai.com/v1` |
+| (unset) | `https://api.openai.com/v1` |
 | `https://gateway.example` | `https://gateway.example/v1` |
 | `https://gateway.example/` | `https://gateway.example/v1` |
 | `https://gateway.example/v1/` | `https://gateway.example/v1` |
 | `https://gateway.example/proxy/v1/` | `https://gateway.example/proxy/v1` |
 | `https://gateway.example/proxy/` | `https://gateway.example/proxy` |
 
-服务在根地址后追加 `/images/generations`、`/images/edits` 或 `/models`，不要填写完整生图接口地址。自定义路径如果需要 `/v1`，请明确填成 `/proxy/v1`。支持 HTTP 和 HTTPS，本地代理可用 `http://localhost:8080`；远程端点建议使用 HTTPS。地址不能包含账号密码、查询参数或 URL 片段。
+The server appends `/images/generations`, `/images/edits` or `/models` to the base URL, so do not enter a full image endpoint URL. If a custom path needs `/v1`, write it explicitly, for example `/proxy/v1`. HTTP and HTTPS are supported; a local proxy can use `http://localhost:8080`, and HTTPS is recommended for remote endpoints. The address must not contain credentials, a query string or a URL fragment.
 
-Key、提示词和输入图片会发送到你配置的服务商。服务不会跟随 HTTP 重定向，请直接填写最终 API 根地址。
+Your key, prompts and input images are sent to the provider you configure. The server does not follow HTTP redirects, so enter the final API base URL directly.
 
-兼容服务商必须支持 OpenAI Image API 的 JSON 文生图、multipart 图片编辑，以及 `data[].b64_json` 或 `data[].url` 返回结构。服务会自动识别两种返回格式并正确处理。部分代理对新模型不支持 `response_format` 参数，保持 `IMAGE_GEN_RESPONSE_FORMAT` 默认值即可正常使用。仅兼容聊天接口或异步任务 ID 的服务不在当前兼容范围内。
+A compatible provider must support the OpenAI Image API's JSON generation, multipart image editing, and the `data[].b64_json` or `data[].url` response shape. The server detects both response formats automatically. Some proxies do not support the `response_format` parameter for newer models; keeping the default `IMAGE_GEN_RESPONSE_FORMAT` works around that. Providers that only offer a chat interface or asynchronous task IDs are not supported.
 
-## 端点检查与实际能力验证
+## Endpoint check and real capability verification
 
-服务启动时只校验本地配置，不自动联网探测或生成测试图片。需要检查时，在 MCP 客户端调用 `check_endpoint`，参数为 `{}`；也可以在配置好环境变量后运行：
+On startup the server only validates local configuration; it never probes the network or generates test images. To check the endpoint, call `check_endpoint` from your MCP client with `{}`, or run this after setting the environment variables:
 
 ```sh
 gpt-image-mcp --check
 ```
 
-诊断最多等待 30 秒，不自动重试，只请求 `GET /models`，不会调用图片生成或编辑接口。结果说明：
+The check waits at most 30 seconds, never retries, and only requests `GET /models`; it does not call the image generation or editing endpoints. Result fields:
 
-| 字段 | 含义 |
+| Field | Meaning |
 | --- | --- |
-| `configuration` | `valid` 表示本地配置格式合法，不代表密钥已获授权 |
-| `modelsEndpoint` | `available` 表示模型列表响应结构正确；`unavailable` 表示请求失败；`unexpected_response` 表示返回内容不符合列表结构 |
-| `modelListed` | 当前模型是否出现在本次返回的列表中，无法确定时为 `null` |
-| `generation` / `editing` | 本项检查始终返回 `unverified`，不会将模型列表成功当成图片能力证明 |
-| `httpStatus` / `message` | HTTP 状态码和说明，不回显密钥或上游原始错误消息 |
+| `configuration` | `valid` means the local configuration is well-formed; it does not mean the key is authorized |
+| `modelsEndpoint` | `available`: the model list response has the expected shape; `unavailable`: the request failed; `unexpected_response`: the response is not a model list |
+| `modelListed` | Whether the configured model appears in the returned list; `null` when it cannot be determined |
+| `generation` / `editing` | Always `unverified`; a successful model list is never treated as proof of image capability |
+| `httpStatus` / `message` | HTTP status and an explanation; the key and raw upstream error messages are never echoed |
 
-有些图片服务不提供 `/models`，或不会列出别名模型，所以检查失败和模型未列出都不会禁止生图。CLI 在模型列表正常时退出码为 0，其余情况为 1；退出码不代表图片能力通过或失败。
+Some image services do not offer `/models` or do not list alias models, so a failed check or an unlisted model does not rule out image generation. The CLI exits with 0 when the model list is healthy and 1 otherwise; the exit code does not mean image capabilities passed or failed.
 
-真正的兼容性验证需要分别执行一次 `generate_image` 和 `edit_image`，检查图片返回和落盘是否成功。这些调用可能计费，建议先使用 `quality: "low"`。文生图通过不能替代编辑接口测试，也不能保证所有参数组合均被服务商支持。
+Real compatibility verification means running `generate_image` and `edit_image` once each and checking that the image is returned and saved. These calls may be billed, so start with `quality: "low"`. A passing generation does not replace testing the edit endpoint, and does not guarantee that every parameter combination is supported by the provider.
 
-## 文件命名与路径
+## File naming and paths
 
-图片按 `输出根目录/yyyy/MM/dd/文件名` 保存，年月日取自实际保存时用户电脑的本地时间，月份和日期补齐两位，不采用 UTC 日期。跨天保存自动进入新目录。
+Images are saved as `output-root/yyyy/MM/dd/file-name`. The date is the local time of your computer at save time, with the month and day zero-padded; UTC dates are not used. Saving after midnight goes into a new directory automatically.
 
-文件名使用自建俏皮词表，组合“形容词 + 小动物 + 动作 + 奇妙事物 + 随机短码”，不额外调用语言模型取名：
+File names come from a built-in playful word list: "adjective + animal + action + wonder + random suffix". No language model is called to name files:
 
 ```text
 cozy-otter-paints-moonlight-7d3a9b2c.png
@@ -93,25 +99,25 @@ sassy-capybara-juggles-marshmallows-c8e2a104.webp
 dreamy-axolotl-brews-stardust-f0914abc.jpg
 ```
 
-默认路径示例：
+Default path examples:
 
 ```text
-Linux:   /home/用户名/gpt-image-mcp/images/2026/09/10/cozy-otter-paints-moonlight-7d3a9b2c.png
-macOS:   /Users/用户名/gpt-image-mcp/images/2026/09/10/cozy-otter-paints-moonlight-7d3a9b2c.png
-Windows: C:\Users\用户名\gpt-image-mcp\images\2026\09\10\cozy-otter-paints-moonlight-7d3a9b2c.png
+Linux:   /home/<user>/gpt-image-mcp/images/2026/09/10/cozy-otter-paints-moonlight-7d3a9b2c.png
+macOS:   /Users/<user>/gpt-image-mcp/images/2026/09/10/cozy-otter-paints-moonlight-7d3a9b2c.png
+Windows: C:\Users\<user>\gpt-image-mcp\images\2026\09\10\cozy-otter-paints-moonlight-7d3a9b2c.png
 ```
 
-输出根目录保持固定，按日期归档；图片文件名使用 ASCII 小写字母、连字符和随机短码，避免系统保留字符与大小写差异。每次使用独占方式创建文件，名称碰撞会重新取名，绝不覆盖已有图片。支持中文和空格目录；`uri` 使用标准 URL 编码。旧版本生成的图片保留原位，不会自动迁移。
+The output root stays fixed and images are archived by date. File names use only lowercase ASCII letters, hyphens and a random suffix, which avoids reserved characters and case collisions. Files are always created exclusively, so a name collision picks a new name and an existing image is never overwritten. Directories containing non-ASCII characters or spaces are supported; `uri` uses standard URL encoding. Images produced by older versions stay where they are and are not migrated.
 
-结果中的 `path` 是本机路径，`uri` 是 `file://` URI，均不是公网下载地址。调用客户端必须能访问服务所在机器的文件系统；是否内联显示图片取决于客户端。图生图可以直接使用上一次返回的 `path`。
+In the result, `path` is a local path and `uri` is a `file://` URI; neither is a public download URL. The calling client must be able to access the file system of the machine running the server, and whether the image is displayed inline depends on the client. For image-to-image, use the `path` returned by a previous call directly.
 
-## 工具
+## Tools
 
 ### `generate_image`
 
 ```json
 {
-  "prompt": "一只水獭在月光下画画，暖色手绘插画，柔和笔触",
+  "prompt": "An otter painting under the moonlight, warm hand-drawn illustration, soft brush strokes",
   "size": "1024x1024",
   "quality": "medium",
   "format": "png"
@@ -122,36 +128,36 @@ Windows: C:\Users\用户名\gpt-image-mcp\images\2026\09\10\cozy-otter-paints-mo
 
 ```json
 {
-  "prompt": "保留图一主体和构图，参考图二的配色与笔触，将背景改为雨夜街道",
-  "images": ["/绝对路径/原图.png", "/绝对路径/风格参考.webp"],
+  "prompt": "Keep the subject and composition of image 1, take the palette and brush strokes from image 2, and change the background to a rainy night street",
+  "images": ["/absolute/path/original.png", "/absolute/path/style-reference.webp"],
   "quality": "high"
 }
 ```
 
-局部编辑可增加 `mask`，填写本机遮罩路径。遮罩必须是含透明通道的 PNG，尺寸与第一张原图一致；完全透明区域表示希望编辑的部分。遮罩是模型的编辑指引，不保证像素级边界精确。
+For local edits, add `mask` with the local path of a mask. The mask must be a PNG with an alpha channel and the same dimensions as the first source image; fully transparent areas mark the parts you want edited. The mask is guidance for the model and does not guarantee pixel-exact boundaries.
 
-| 参数 | 默认值与范围 |
+| Parameter | Default and range |
 | --- | --- |
-| `prompt` | 必填，去除首尾空白后 1～32000 字符 |
-| `size` | 默认 `auto`，也可选 `WIDTHxHEIGHT`（如 `1024x1024`、`1536x1024`、`3840x2160`）。宽高需为 16 的倍数，比例不超过 3:1，总像素 655360～8294400 |
-| `quality` | 默认 `auto`，也可选 `low`、`medium`、`high`、`xhigh`、`max` |
-| `format` | 默认 `png`，也可选 `jpeg`、`webp` |
-| `background` | 默认 `auto`，也可选 `transparent`、`opaque`；透明背景需配合 `png` 或 `webp` 格式 |
-| `moderation` | 仅文生图，默认 `auto`，也可选 `low`；内容安全审核级别 |
-| `output_compression` | 可选 0～100 整数，仅 `jpeg` 和 `webp` 格式生效 |
-| `input_fidelity` | 仅编辑，可选 `high` 或 `low`；控制对原图细节的保留程度 |
-| `images` | 编辑必填，1～16 张本机 PNG、JPEG 或 WebP；单图小于 50 MiB，参考图合计不超过 100 MiB |
-| `mask` | 编辑可选，本机 PNG 遮罩路径；单文件小于 50 MiB |
+| `prompt` | Required, 1 to 32000 characters after trimming whitespace |
+| `size` | Default `auto`, or `WIDTHxHEIGHT` (for example `1024x1024`, `1536x1024`, `3840x2160`). Width and height must be multiples of 16, the aspect ratio at most 3:1, and total pixels between 655360 and 8294400 |
+| `quality` | Default `auto`, or `low`, `medium`, `high`, `xhigh`, `max` |
+| `format` | Default `png`, or `jpeg`, `webp` |
+| `background` | Default `auto`, or `transparent`, `opaque`; transparent requires `png` or `webp` |
+| `moderation` | Generation only. Default `auto`, or `low`; content moderation level |
+| `output_compression` | Optional integer 0 to 100; only applies to `jpeg` and `webp` |
+| `input_fidelity` | Editing only. Optional `high` or `low`; how closely details of the source images are preserved |
+| `images` | Required for editing: 1 to 16 local PNG, JPEG or WebP files; each under 50 MiB, at most 100 MiB in total |
+| `mask` | Optional for editing: local PNG mask path; under 50 MiB |
 
-输入图片路径必须为本机绝对路径或以 `~/` 开头。每次生成一张新图片，不修改输入文件。
+Input image paths must be absolute local paths or start with `~/`. Each call produces one new image and never modifies the input files.
 
-成功时同时返回 MCP 文本和 `structuredContent`，内容一致：
+On success the result carries both MCP text and `structuredContent` with identical content:
 
 ```json
 {
   "images": [{
-    "path": "/Users/用户名/gpt-image-mcp/images/2026/09/10/cozy-otter-paints-moonlight-7d3a9b2c.png",
-    "uri": "file:///Users/%E7%94%A8%E6%88%B7%E5%90%8D/gpt-image-mcp/images/2026/09/10/cozy-otter-paints-moonlight-7d3a9b2c.png",
+    "path": "/Users/<user>/gpt-image-mcp/images/2026/09/10/cozy-otter-paints-moonlight-7d3a9b2c.png",
+    "uri": "file:///Users/<user>/gpt-image-mcp/images/2026/09/10/cozy-otter-paints-moonlight-7d3a9b2c.png",
     "mimeType": "image/png",
     "bytes": 123456,
     "width": 1024,
@@ -161,6 +167,10 @@ Windows: C:\Users\用户名\gpt-image-mcp\images\2026\09\10\cozy-otter-paints-mo
 }
 ```
 
-失败返回 `isError: true` 和错误说明。服务关闭自动重试；超时或断线不代表上游没有执行，重新调用可能再次计费。图片生成成功但本地保存失败时会明确提示，不会重新调用生成接口。客户端取消会传递给 API 请求，但无法保证取消上游已开始的计费。
+Failures return `isError: true` with an explanation. Automatic retries are disabled. A timeout or disconnect does not mean the upstream did not run the request, and calling again may be billed again. If generation succeeds but saving locally fails, this is reported explicitly and the generation endpoint is not called again. Client cancellation is passed on to the API request, but it cannot guarantee that billing for work already started upstream is cancelled.
 
-真实验收建议用 `quality: "low"` 各执行一次文生图和图生图，确认账号模型权限、网络、图片效果与客户端展示行为。
+For real acceptance testing, run one text-to-image and one image-to-image call with `quality: "low"` to confirm model access, network, image results and how your client displays them.
+
+## License
+
+[MIT](LICENSE)
