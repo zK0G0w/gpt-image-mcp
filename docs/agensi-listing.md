@@ -4,7 +4,7 @@ Draft copy for the Agensi submission form (https://www.agensi.io/dashboard/submi
 
 ## ZIP
 
-`gpt-image-workflow-1.0.0.zip`, built from `skills/gpt-image-workflow/` (see "Packaging" at the end). Contents: `SKILL.md`, `references/setup.md`, `LICENSE` (MIT).
+`gpt-image-workflow-1.0.0.zip`, built from `skills/gpt-image-workflow/` (see "Packaging" at the end). Contents: `SKILL.md` and `references/setup.md`. The license is declared in the `SKILL.md` frontmatter (`license: MIT`); the full text is the repository's `LICENSE`.
 
 ## Name (max 60 characters, must be unique on Agensi)
 
@@ -42,7 +42,7 @@ The skill is plain instructions (`SKILL.md` plus one setup reference). It contai
 
 **License**
 
-Released under the MIT license (copy included in the ZIP), the same license as the gpt-image-mcp repository.
+Released under the MIT license, the same license as the gpt-image-mcp repository (full text: https://github.com/zK0G0w/gpt-image-mcp/blob/main/LICENSE).
 
 ## See it in action
 
@@ -117,9 +117,9 @@ https://github.com/zK0G0w/gpt-image-mcp
 ## Packaging
 
 ```sh
-cd skills
-zip -X -r ../../gpt-image-mcp-skill-release/gpt-image-workflow-1.0.0.zip gpt-image-workflow -x "*.DS_Store"
-unzip -l ../../gpt-image-mcp-skill-release/gpt-image-workflow-1.0.0.zip   # expect: LICENSE, SKILL.md, references/setup.md
+mkdir -p release
+git archive --format=zip --prefix=gpt-image-workflow/ -o release/gpt-image-workflow-1.0.0.zip HEAD:skills/gpt-image-workflow SKILL.md references/setup.md
+unzip -l release/gpt-image-workflow-1.0.0.zip   # expect: SKILL.md, references/setup.md
 ```
 
-Run it from a clean checkout so that only tracked files are in the folder. Anyone can also get the skill by downloading the `skills/gpt-image-workflow/` folder from the GitHub repository; it is intentionally not part of the npm package (`files` in `package.json` is unchanged).
+Run it from the repository root. `git archive` packs only committed files, so commit skill changes first; `release/` is git-ignored. Anyone can also get the skill by downloading the `skills/gpt-image-workflow/` folder from the GitHub repository; it is intentionally not part of the npm package (`files` in `package.json` is unchanged).
