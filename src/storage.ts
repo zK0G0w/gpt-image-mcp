@@ -54,5 +54,5 @@ export async function saveImage(directory: string, bytes: Buffer, format: "png" 
     }
     return { path: filePath, uri: pathToFileURL(filePath).href, mimeType: `image/${format}`, bytes: bytes.length };
   }
-  throw new Error("无法分配不重名的图片文件，请重新尝试。");
+  throw new Error("Unable to allocate a unique image file name. Please try again.");
 }

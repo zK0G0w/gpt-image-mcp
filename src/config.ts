@@ -11,7 +11,7 @@ export function localPath(value: string): string {
   const expanded = value === "~" ? homedir()
     : /^~[/\\]/.test(value) ? path.join(homedir(), value.slice(2)) : value;
   if (!path.isAbsolute(expanded)) {
-    throw new Error("请使用本机绝对路径，或以 ~/ 开头的路径。");
+    throw new Error("Use an absolute local path, or a path starting with ~/.");
   }
   return path.normalize(expanded);
 }
@@ -24,24 +24,24 @@ export function localPath(value: string): string {
  */
 export function readConfig(env: NodeJS.ProcessEnv = process.env) {
   const apiKey = env.OPENAI_API_KEY?.trim();
-  if (!apiKey) throw new Error("请通过 OPENAI_API_KEY 配置 OpenAI API 密钥。");
+  if (!apiKey) throw new Error("Set the OpenAI API key through OPENAI_API_KEY.");
   const model = env.IMAGE_GEN_MODEL?.trim() || "gpt-image-2.5-sunburst";
   // 兼容服务商对 GPT Image 的模型别名，不根据名称猜测图片能力。
   const baseURL = normalizeBaseURL(env.OPENAI_BASE_URL?.trim() || "https://api.openai.com/v1");
   const timeout = Number(env.IMAGE_GEN_TIMEOUT_MS || 300_000);
   if (!Number.isSafeInteger(timeout) || timeout < 1000) {
-    throw new Error("IMAGE_GEN_TIMEOUT_MS 必须是大于或等于 1000 的整数，单位为毫秒。");
+    throw new Error("IMAGE_GEN_TIMEOUT_MS must be an integer of at least 1000 (milliseconds).");
   }
   const outputDir = env.IMAGE_GEN_OUTPUT_DIR?.trim();
   const responseFormat = (env.IMAGE_GEN_RESPONSE_FORMAT?.trim() || "b64_json") as "b64_json" | "url";
   if (responseFormat !== "b64_json" && responseFormat !== "url") {
-    throw new Error("IMAGE_GEN_RESPONSE_FORMAT 仅支持 b64_json 或 url。");
+    throw new Error("IMAGE_GEN_RESPONSE_FORMAT only supports b64_json or url.");
   }
   const defaultSize = parseDefaultSize(env.IMAGE_GEN_DEFAULT_SIZE?.trim());
   const validQualities = ["auto", "low", "medium", "high", "xhigh", "max"] as const;
   const defaultQuality = (env.IMAGE_GEN_DEFAULT_QUALITY?.trim() || "auto") as typeof validQualities[number];
   if (!validQualities.includes(defaultQuality)) {
-    throw new Error(`IMAGE_GEN_DEFAULT_QUALITY 仅支持 ${validQualities.join("、")}。`);
+    throw new Error(`IMAGE_GEN_DEFAULT_QUALITY only supports ${validQualities.join(", ")}.`);
   }
   return {
     apiKey, baseURL, model, timeout, responseFormat, defaultSize, defaultQuality,
@@ -53,12 +53,12 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env) {
 function parseDefaultSize(value: string | undefined): string {
   if (!value) return "auto";
   const match = /^(\d+)x(\d+)$/.exec(value);
-  if (!match) throw new Error("IMAGE_GEN_DEFAULT_SIZE 格式必须为 WIDTHxHEIGHT（如 1024x1024）。");
+  if (!match) throw new Error("IMAGE_GEN_DEFAULT_SIZE must use the WIDTHxHEIGHT format (for example 1024x1024).");
   const w = Number(match[1]), h = Number(match[2]);
   if (w % 16 !== 0 || h % 16 !== 0 || w <= 0 || h <= 0
     || Math.max(w, h) / Math.min(w, h) > 3
     || w * h < 655_360 || w * h > 8_294_400) {
-    throw new Error("IMAGE_GEN_DEFAULT_SIZE 宽高需为 16 的倍数，比例不超过 3:1，总像素 655360~8294400。");
+    throw new Error("IMAGE_GEN_DEFAULT_SIZE: width and height must be multiples of 16, the aspect ratio at most 3:1, and the total pixels between 655360 and 8294400.");
   }
   return value;
 }
@@ -69,10 +69,10 @@ function normalizeBaseURL(value: string): string {
   try {
     url = new URL(value);
   } catch {
-    throw new Error("OPENAI_BASE_URL 必须是完整的 HTTP 或 HTTPS API 根地址。");
+    throw new Error("OPENAI_BASE_URL must be a complete HTTP or HTTPS API base URL.");
   }
   if (!["http:", "https:"].includes(url.protocol) || url.username || url.password || url.search || url.hash) {
-    throw new Error("OPENAI_BASE_URL 仅支持 HTTP/HTTPS，且不能包含账号密码、查询参数或片段；密钥请通过 OPENAI_API_KEY 配置。");
+    throw new Error("OPENAI_BASE_URL only supports HTTP/HTTPS and must not contain credentials, a query string or a fragment; set the key through OPENAI_API_KEY.");
   }
   // 只填域名时补齐常见的 /v1；已有路径按显式配置保留，不改写代理前缀或其他版本。
   if (!url.pathname.replace(/\/+$/, "")) url.pathname = "/v1";

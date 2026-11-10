@@ -9,7 +9,7 @@ import { createServer } from "./server.js";
 try {
   const args = process.argv.slice(2);
   if (args.length === 1 && args[0] === "--help") {
-    process.stdout.write("gpt-image-mcp\n\n用法：\n  gpt-image-mcp          启动本地 stdio MCP 服务\n  gpt-image-mcp --check  检查模型列表接口，不发送生图请求\n  gpt-image-mcp --help   显示帮助\n\n配置：OPENAI_API_KEY、OPENAI_BASE_URL、IMAGE_GEN_MODEL、IMAGE_GEN_OUTPUT_DIR、IMAGE_GEN_TIMEOUT_MS、IMAGE_GEN_RESPONSE_FORMAT、IMAGE_GEN_DEFAULT_SIZE、IMAGE_GEN_DEFAULT_QUALITY\n");
+    process.stdout.write("gpt-image-mcp\n\nUsage:\n  gpt-image-mcp          Start the local stdio MCP server\n  gpt-image-mcp --check  Check the model list endpoint without sending image requests\n  gpt-image-mcp --help   Show this help\n\nConfiguration (environment variables): OPENAI_API_KEY、OPENAI_BASE_URL、IMAGE_GEN_MODEL、IMAGE_GEN_OUTPUT_DIR、IMAGE_GEN_TIMEOUT_MS、IMAGE_GEN_RESPONSE_FORMAT、IMAGE_GEN_DEFAULT_SIZE、IMAGE_GEN_DEFAULT_QUALITY\n");
   } else if (args.length === 1 && args[0] === "--check") {
     const config = readConfig();
     const result = await checkEndpoint(createApiClient(config), config);
@@ -19,10 +19,10 @@ try {
     const server = createServer(readConfig());
     await server.connect(new StdioServerTransport());
   } else {
-    throw new Error("不支持的命令参数，请使用 gpt-image-mcp --help 查看用法。");
+    throw new Error("Unsupported argument. Run gpt-image-mcp --help for usage.");
   }
 } catch (error) {
   // stdout 专用于 MCP 协议消息，启动错误只能写入 stderr。
-  console.error(error instanceof Error ? error.message : "MCP 服务启动失败。");
+  console.error(error instanceof Error ? error.message : "Failed to start the MCP server.");
   process.exitCode = 1;
 }

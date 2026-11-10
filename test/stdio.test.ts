@@ -37,7 +37,7 @@ test("帮助命令不需要密钥，未知参数不会意外启动 MCP", () => {
   assert.match(help.stdout, /OPENAI_BASE_URL/);
   const unknown = spawnSync(process.execPath, ["--import", "tsx", entry, "--unknown"], options);
   assert.equal(unknown.status, 1);
-  assert.match(unknown.stderr, /不支持的命令参数/);
+  assert.match(unknown.stderr, /Unsupported argument/);
   assert.equal(unknown.stdout, "");
 });
 

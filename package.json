@@ -1,7 +1,7 @@
 {
   "name": "gpt-image-mcp",
   "version": "0.3.0",
-  "description": "支持文生图、图片编辑和参考风格生成的本地 MCP 服务",
+  "description": "Local stdio MCP server for GPT Image: text-to-image, image editing and reference-style generation",
   "license": "MIT",
   "author": "WainZeng",
   "repository": {

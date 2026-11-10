@@ -35,20 +35,20 @@ export async function checkEndpoint(client: OpenAI, config: Config, signal?: Abo
       .safeParse(await response.json().catch(() => null));
     if (!models.success) {
       return { ...baseline, modelsEndpoint: "unexpected_response", httpStatus: response.status,
-        message: "端点已响应，但返回内容不是兼容的模型列表。请确认 API 根地址；图片能力尚未验证。" };
+        message: "The endpoint responded, but the body is not a compatible model list. Check the API base URL; image capabilities are not verified." };
     }
     const listed = models.data.data.some((model) => model.id === config.model);
     return { ...baseline, modelsEndpoint: "available", modelListed: listed, httpStatus: response.status,
-      message: `${listed ? "当前模型出现在返回的列表中。" : "当前模型未出现在返回的列表中；可能是别名或服务商未列出。"}模型列表响应正常不代表支持图片生成或编辑。请分别调用 generate_image 和 edit_image 实测，这些调用可能计费。` };
+      message: `${listed ? "The configured model appears in the returned list. " : "The configured model does not appear in the returned list; it may be an alias or not listed by the provider. "}A healthy model list does not prove that image generation or editing works. Call generate_image and edit_image separately to verify; these calls may be billed.` };
   } catch (error) {
     // 列表接口可能独立鉴权或根本不存在，这些失败不能作为禁止生图的依据。
     const status = error instanceof OpenAI.APIError ? error.status ?? null : null;
-    let message = "模型列表请求失败，请检查网络和端点配置；未发送任何图片生成请求。";
-    if (error instanceof OpenAI.APIConnectionTimeoutError) message = "模型列表请求超时；图片能力仍未验证。";
-    else if (signal?.aborted) message = "端点检查已取消。";
-    else if (status === 401 || status === 403) message = "模型列表接口拒绝访问，请检查密钥及权限；不能据此确定图片接口是否可用。";
-    else if (status === 404 || status === 405) message = "此端点没有可用的模型列表接口；部分图片服务不提供该接口，不代表不支持生图。";
-    else if (status === 429) message = "模型列表接口返回限流或额度错误，请检查服务商配置后重试；未自动重试。";
+    let message = "The model list request failed. Check the network and endpoint configuration; no image request was sent.";
+    if (error instanceof OpenAI.APIConnectionTimeoutError) message = "The model list request timed out; image capabilities are still unverified.";
+    else if (signal?.aborted) message = "The endpoint check was cancelled.";
+    else if (status === 401 || status === 403) message = "The model list endpoint denied access. Check the key and permissions; this does not tell whether the image endpoints work.";
+    else if (status === 404 || status === 405) message = "This endpoint has no usable model list; some image providers do not offer one, which does not mean image generation is unsupported.";
+    else if (status === 429) message = "The model list endpoint returned a rate-limit or quota error. Check the provider configuration and retry; nothing was retried automatically.";
     return { ...baseline, modelsEndpoint: "unavailable", httpStatus: status, message };
   }
 }

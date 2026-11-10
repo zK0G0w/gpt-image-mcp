@@ -42,9 +42,9 @@ test("配置使用本机主目录，拒绝相对路径和无效配置", () => {
   assert.equal(readConfig({ OPENAI_API_KEY: "测试" }).outputDir, path.join(homedir(), "gpt-image-mcp", "images"));
   assert.equal(readConfig({ OPENAI_API_KEY: "测试" }).responseFormat, "b64_json");
   assert.equal(readConfig({ OPENAI_API_KEY: "测试", IMAGE_GEN_RESPONSE_FORMAT: "url" }).responseFormat, "url");
-  assert.throws(() => localPath("./images"), /绝对路径/);
+  assert.throws(() => localPath("./images"), /absolute local path/);
   assert.throws(() => readConfig({}), /OPENAI_API_KEY/);
-  assert.throws(() => readConfig({ OPENAI_API_KEY: "测试", IMAGE_GEN_TIMEOUT_MS: "abc" }), /整数/);
+  assert.throws(() => readConfig({ OPENAI_API_KEY: "测试", IMAGE_GEN_TIMEOUT_MS: "abc" }), /integer/);
   assert.throws(() => readConfig({ OPENAI_API_KEY: "测试", IMAGE_GEN_RESPONSE_FORMAT: "invalid" }), /b64_json/);
   assert.equal(readConfig({ OPENAI_API_KEY: "测试" }).defaultSize, "auto");
   assert.equal(readConfig({ OPENAI_API_KEY: "测试" }).defaultQuality, "auto");
@@ -190,7 +190,7 @@ test("保存失败不重复生成，明确提示已有 API 调用", async (t) =>
   await writeFile(config.outputDir, "占用目录位置");
   const result = await client.callTool({ name: "generate_image", arguments: { prompt: "画画" } });
   assert.equal(result.isError, true);
-  assert.match(JSON.stringify(result), /图片已生成，但保存失败/);
+  assert.match(JSON.stringify(result), /could not be saved/);
   assert.equal(count, 1);
 });
 
