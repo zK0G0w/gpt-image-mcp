@@ -1,6 +1,6 @@
 {
   "name": "gpt-image-mcp",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Local stdio MCP server for GPT Image: text-to-image, image editing and reference-style generation",
   "license": "MIT",
   "author": "WainZeng",
@@ -19,8 +19,15 @@
     "model-context-protocol"
   ],
   "type": "module",
-  "bin": { "gpt-image-mcp": "dist/index.js" },
-  "files": ["dist", "README.md", "LICENSE", ".env.example"],
+  "bin": {
+    "gpt-image-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    ".env.example"
+  ],
   "engines": {
     "node": ">=22"
   },
